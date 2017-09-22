@@ -15,11 +15,15 @@
     <script src="https://fb.me/react-dom-15.1.0.js"></script>
 
     <style type="text/css">
+        section {
+            overflow: auto;
+        }
+
         select {
             margin-bottom: 30px;
         }
 
-        ol, li {
+        ul, li {
             list-style: none;
             padding: 0px;
             margin: 0px;
@@ -63,6 +67,30 @@
             display: block;
         }
 
+        .profile {
+            width: 25%;
+            float: right;
+            padding: 5px;
+            border: solid 1px #ddd;
+        }
+
+        .profile img {
+            display: inline-block;
+            width: 40%;
+        }
+
+        .profile p {
+            text-align: left;
+            width: 60%;
+            float: right;
+            padding-left: 10px;
+        }
+
+        .clear {
+            width: 100%;
+            display: block;
+            overflow: auto;
+        }
     </style>
 </head>
 
@@ -76,6 +104,14 @@
 
     <!-- "text/babel" marks a target for transpiler, this becomes plain JS -->
     <script type="text/babel">
+        const asset = (path) => {
+            if (path === '') {
+                return undefined;
+            }
+
+            return 'http://localhost:8080' + path;
+        }
+
         class Nav extends React.Component {
             render() {
                 return (
@@ -85,6 +121,17 @@
                         </div>
                     </nav>
                 ); 
+            }
+        }
+
+        class Profile extends React.Component {
+            render() {
+                return (
+                    <div className="profile">
+                        <p>{this.props.employee.name || ''}</p>
+                        <img src={asset(this.props.employee.photo) || 'https://placehold.it/200x200'} />
+                    </div>
+                );
             }
         }
 
@@ -157,31 +204,43 @@
 
                 $.get('http://localhost:8080/api/search?type=Task&q=delegate:'+id)
                     .then((resp) => {
-                        resp.data.sort(function(a, b) {
+                        resp.data.sort((a, b) => {
                             return a.timestamp < b.timestamp;
                         });
 
-                        this.setState({ tasks: resp.data }, function() {
+                        this.setState({ tasks: resp.data }, () => {
                             if (id === "0") { return; }
                             $.get('http://localhost:8080/api/content?type=Employee&id='+id)
                                 .then((resp) => {
-                                    this.setState({ currentEmployee: resp.data})
+                                    this.setState({ currentEmployee: resp.data[0]});
                                 });
                         });
                     });
             }
 
+            makeProfile() {
+                if (this.state.currentEmployee.id !== undefined) {
+                    return (
+                        <Profile employee={this.state.currentEmployee}/>
+                    )
+                }
+            }
+
             render() {
                 return (
                     <section className="container-fluid">
-                        <h4>See tasks for:</h4>
-                        <select name="employee" id="employees" onChange={(e) => this.pickEmployee(e)}>
-                            {this.loadOptions()}
-                        </select>
-                    
-                        <ol id="tasks">
+                        <div className="clear">
+                            {this.makeProfile()}
+                            <h4>See tasks for:</h4>
+                            <select name="employee" id="employees" onChange={(e) => this.pickEmployee(e)}>
+                                {this.loadOptions()}
+                            </select>
+
+                        </div>
+
+                        <ul id="tasks">
                             {this.loadTasks()}
-                        </ol>
+                        </ul>
                     </section>
                 );
             }

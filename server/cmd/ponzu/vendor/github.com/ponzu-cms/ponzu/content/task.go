@@ -19,28 +19,13 @@ type Task struct {
 	Complete    bool   `json:"complete"`
 }
 
+// IndexContent satisfies the search.Searchable interface and returning true
+// tells Ponzu that Task content should be indexed
 func (t *Task) IndexContent() bool { return true }
 
+// Update satisfies the api.Updateable interface, enabling properly formatted
+// requests to update Task data
 func (t *Task) Update(res http.ResponseWriter, req *http.Request) error {
-	return nil
-}
-
-func (t *Task) AfterAPIUpdate(res http.ResponseWriter, req *http.Request) error {
-	// j, err := db.Content(req.Context().Value("target").(string))
-	// if err != nil {
-	// 	return err
-	// }
-
-	// fmt.Println(string(j))
-
-	// task := &Task{}
-	// err = json.Unmarshal(j, task)
-	// if err != nil {
-	// 	return err
-	// }
-
-	fmt.Printf("%#v\n", t)
-
 	return nil
 }
 
