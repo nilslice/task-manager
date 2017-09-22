@@ -106,6 +106,7 @@
 
     <!-- "text/babel" marks a target for transpiler, this becomes plain JS -->
     <script type="text/babel">
+        const HOST = 'http://localhost:8080'
         const asset = (path) => {
             if (path === '') {
                 return undefined;
@@ -153,7 +154,7 @@
             }
 
             componentDidMount() {
-                $.get('http://localhost:8080/api/contents?type=Employee&count=-1')
+                $.get(HOST + '/api/contents?type=Employee&count=-1')
                     .then((resp) => {
                         this.setState({
                             employees: this.state.employees.concat(resp.data)
@@ -204,7 +205,7 @@
                 let ref = e.currentTarget.options[e.currentTarget.selectedIndex].value;
                 let id = ref[ref.length-1];
 
-                $.get('http://localhost:8080/api/search?type=Task&q=delegate:'+id)
+                $.get(HOST + '/api/search?type=Task&q=delegate:'+id)
                     .then((resp) => {
                         resp.data.sort((a, b) => {
                             return a.timestamp < b.timestamp;
@@ -212,7 +213,7 @@
 
                         this.setState({ tasks: resp.data }, () => {
                             if (id === "0") { return; }
-                            $.get('http://localhost:8080/api/content?type=Employee&id='+id)
+                            $.get(HOST + '/api/content?type=Employee&id='+id)
                                 .then((resp) => {
                                     this.setState({ currentEmployee: resp.data[0]});
                                 });
@@ -264,7 +265,7 @@
                     data.append('complete', this.state.checked)
                     $.ajax({
                         method: 'POST',
-                        url: 'http://localhost:8080/api/content/update?type=Task&id='+this.props.id,
+                        url: HOST + '/api/content/update?type=Task&id='+this.props.id,
                         data: data,
                         cache: false,
                         contentType: false,
