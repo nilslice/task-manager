@@ -2,6 +2,7 @@ package content
 
 import (
 	"fmt"
+	"net/http"
 
 	"github.com/ponzu-cms/ponzu/management/editor"
 	"github.com/ponzu-cms/ponzu/system/item"
@@ -15,7 +16,15 @@ type Employee struct {
 	Photo string `json:"photo"`
 }
 
+// IndexContent satisfies the search.Searchable interface and returning true
+// tells Ponzu that Employee content should be indexed
 func (e *Employee) IndexContent() bool { return true }
+
+// Push satisfies the item.Pushable interface, instructing a HTTP/2 enabled
+// response to push an additional resource as a secondary response
+func (e *Employee) Push(res http.ResponseWriter, req *http.Request) ([]string, error) {
+	return []string{"photo"}, nil
+}
 
 // MarshalEditor writes a buffer of html to edit a Employee within the CMS
 // and implements editor.Editable

@@ -29,6 +29,12 @@ func (t *Task) Update(res http.ResponseWriter, req *http.Request) error {
 	return nil
 }
 
+// Push satisfies the item.Pushable interface, instructing a HTTP/2 enabled
+// response to push an additional resource as a secondary response
+func (t *Task) Push(res http.ResponseWriter, req *http.Request) ([]string, error) {
+	return []string{"delegate"}, nil
+}
+
 // MarshalEditor writes a buffer of html to edit a Task within the CMS
 // and implements editor.Editable
 func (t *Task) MarshalEditor() ([]byte, error) {
