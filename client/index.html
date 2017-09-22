@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Task Manager</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
+    <link rel="stylesheet" href="/theme.css">
+    <script src="https://fb.me/react-15.1.0.js"></script>
+    <script src="https://fb.me/react-dom-15.1.0.js"></script>
+    <style type="text/css">
+        select {
+            margin-bottom: 30px;
+        }
+
+        ol, li {
+            list-style: none;
+            padding: 0px;
+            margin: 0px;
+        }
+
+        label {
+            cursor: pointer;
+            padding: 10px;
+        }
+
+        li {
+            background: #eee;
+            display: block;
+            margin: 2px 0;
+            cursor: pointer;
+        }
+        /* 
+        li:nth-child(odd) {
+            background: #ddd;
+        } */
+
+        li.checked {
+            background: #fff;
+            color: #888;
+            opacity: 0.6;
+        }
+
+        input[type=checkbox] {
+            float: right;
+        }
+
+        label {
+            width: 100%;
+            display: block;
+        }
+
+    </style>
+</head>
+
+<body>
+    <main></main>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-core/5.8.34/browser.min.js"></script>
+    <script type="text/babel">
+        var Nav = React.createClass({
+            render: function () {
+                return (
+                    <nav className="navbar navbar-default">
+                        <div>
+                            <a href="/" className="navbar-brand">Task Manager</a>
+                        </div>
+                    </nav>
+                );
+            }
+        })
+
+        var Tasks = React.createClass({
+            getInitialState: function() {
+                return {
+                    employees: [{
+                        id: 0,
+                        name: '',
+                        email: 'Select one...'
+                    }],
+                    tasks: [],
+                    currentEmployee: {}
+                }
+            },
+
+            componentDidMount: function() {
+                var that = this;
+                
+                $.get('http://localhost:8080/api/contents?type=Employee&count=-1')
+                    .then(function(resp) {
+                        that.setState({
+                            employees: that.state.employees.concat(resp.data)
+                        })
+                    });
+
+            },
+
+            loadOptions: function() {
+                var that = this;
+
+                if (this.state.employees.length < 1) {
+                    return (
+                        <option value="" disable="true">Loading employees...</option>
+                    );
+                }
+
+                return this.state.employees.map(function(e, i) {
+                    return (
+                        <option 
+                            value={`/api/content?type=Employee&id=${e.id}`}
+                            key={i}
+                        >
+                            {e.email}
+                        </option>
+                    );
+                })
+
+            },
+
+            loadTasks: function() {
+                var that = this;
+
+                if (this.state.tasks && this.state.tasks.length < 1) {
+                    return <p>No tasks.</p>;
+                }
+
+                return this.state.tasks.map(function(task, i) {
+                    return (
+                        <Task 
+                            title={task.name} 
+                            complete={task.complete}
+                            id={task.id}
+                            key={i}
+                        />
+                    );
+                })
+            },
+
+            pickEmployee: function(e) {
+                var ref = e.currentTarget.options[e.currentTarget.selectedIndex].value;
+                var id = ref[ref.length-1];
+
+                var that = this;
+                $.get('http://localhost:8080/api/search?type=Task&q=delegate:'+id)
+                    .then(function(resp) {
+                        resp.data.sort(function(a, b) {
+                            return a.timestamp < b.timestamp;
+                        });
+
+                        that.setState({ tasks: resp.data }, function() {
+                            if (id === "0") { return; }
+                            $.get('http://localhost:8080/api/content?type=Employee&id='+id)
+                                .then(function(resp) {
+                                    that.setState({ currentEmployee: resp.data})
+                                });
+                        });
+                    });
+            },
+
+            render: function () {
+                return (
+                    <section>
+                        <h4>See tasks for:</h4>
+                        <select name="employee" id="employees" onChange={this.pickEmployee}>
+                            {this.loadOptions()}
+                        </select>
+                    
+                        <ol id="tasks">
+                            {this.loadTasks()}
+                        </ol>
+                    </section>
+                );
+            }
+        });
+
+        var Task = React.createClass({
+            getInitialState: function() {
+                var that = this;
+                return {
+                    checked: that.props.complete
+                };
+            },
+
+            toggleComplete: function() {
+                var that = this;
+                this.setState({ checked: !this.state.checked }, function() {
+                    var data = new FormData();
+                    data.append('complete', that.state.checked)
+                    $.ajax({
+                        method: 'POST',
+                        url: 'http://localhost:8080/api/content/update?type=Task&id='+that.props.id,
+                        data: data,
+                        cache: false,
+                        contentType: false,
+                        processData: false,
+                    }).then(function(resp) {
+                        console.log(resp);
+                    })
+                });
+            },
+
+            render: function () {
+                var status = '';
+                if (this.state.checked === true) {
+                    status = ' checked';
+                } 
+
+                return (
+                    <li className={'col-12-lg' + status}>
+                        <label>
+                            {this.props.title}
+                            <input type="checkbox" onChange={this.toggleComplete} value={this.state.checked} defaultChecked={this.props.complete}/>
+                        </label>
+                    </li>
+                );
+            }
+        });
+
+        ReactDOM.render(
+            <div className="container">
+                <Nav/>
+                <Tasks/>
+            </div>
+            , 
+            document.querySelector('main'));
+    </script>
+</body>
+
+</html>
